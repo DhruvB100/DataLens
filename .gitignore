@@ -3,3 +3,6 @@ roadmap.md
 earthquakes.json
 features.json
 records.json
+.terraform/
+*.tfstate*
+*.zip
