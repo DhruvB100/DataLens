@@ -85,7 +85,7 @@ resource "aws_iam_role_policy_attachment" "transform_basic_exec" {
 }
 
 resource "aws_iam_role_policy" "transform_s3_access" {
-  name = "write_to_s3"
+    name = "write_to_s3"
     role = aws_iam_role.transform_lambda_role.id
     policy = jsonencode({
         Version = "2012-10-17"
@@ -141,4 +141,94 @@ resource "aws_lambda_permission" "allow_s3_invoke" {
 
   principal = "s3.amazonaws.com"
   source_arn = aws_s3_bucket.data_lake.arn
+}
+
+resource "aws_iam_role" "query_lambda_role" {
+  name = "datalens-query-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+        {
+        Effect = "Allow"
+        Principal = {
+            Service = "lambda.amazonaws.com"
+            }
+        Action = "sts:AssumeRole"
+        }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "query_basic_exec" {
+  role = aws_iam_role.query_lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy" "query_access" {
+    name = "query_from_s3"
+    role = aws_iam_role.query_lambda_role.id
+    policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {  
+                Effect = "Allow"
+                Action = [
+                    "athena:StartQueryExecution",
+                    "athena:GetQueryExecution",
+                    "athena:GetQueryResults"
+                ]
+                Resource = "*"
+            },
+            {
+                Effect = "Allow"
+                Action = [
+                    "glue:GetTable",
+                    "glue:GetPartitions",
+                    "glue:GetDatabase"
+                ]
+                Resource = "*"
+            },
+            {
+                Effect = "Allow"
+                Action = [
+                    "s3:GetObject",
+                    "s3:PutObject"
+                ]
+                Resource = "${aws_s3_bucket.data_lake.arn}/*"
+            },
+            {
+                Effect = "Allow"
+                Action = [
+                    "s3:ListBucket",
+                    "s3:GetBucketLocation"
+                ]
+                Resource = "${aws_s3_bucket.data_lake.arn}"
+            }
+        ]
+    })
+}
+
+data "archive_file" "query_zip" {
+    type = "zip"
+    source_file = "../lambdas/query/handler.py"
+    output_path = "query.zip"
+}
+
+resource "aws_lambda_function" "query" {
+    function_name = "datalens-query"
+    role = aws_iam_role.query_lambda_role.arn
+    handler = "handler.handler"
+    runtime = "python3.12"
+
+    filename = data.archive_file.query_zip.output_path
+    source_code_hash = data.archive_file.query_zip.output_base64sha256
+
+    timeout = 30
+    
+    environment {
+      variables = {
+        GLUE_DB = "datalens"
+        ATHENA_OUTPUT = "s3://${aws_s3_bucket.data_lake.id}/athena-results/"
+      }
+    }
 }

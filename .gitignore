@@ -6,3 +6,5 @@ records.json
 .terraform/
 *.tfstate*
 *.zip
+issues.txt
+commands.txt
