@@ -2,6 +2,7 @@ import requests
 import json
 
 def main():
+    # first look at the raw usgs feed shape, before any of the real pipeline existed
     feed_url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson"
 
     response = requests.get(feed_url)

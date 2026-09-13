@@ -1,3 +1,4 @@
+# provider setup - aws for real resources, archive for zipping lambda code
 terraform {
     required_providers {
         aws = {

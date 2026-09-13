@@ -1,7 +1,9 @@
+# just a namespace for the table below
 resource "aws_glue_catalog_database" "datalens_db" {
   name = "datalens"
 }
 
+# tells athena how to read the parquet files sitting in gold/
 resource "aws_glue_catalog_table" "earthquakes" {
   database_name = aws_glue_catalog_database.datalens_db.name
   name = "earthquakes"
@@ -42,7 +44,7 @@ resource "aws_glue_catalog_table" "earthquakes" {
 
     columns {
       name = "tsunami"
-      type = "bigint"
+      type = "bigint" # not "int" - pandas writes these as 64-bit
     }
 
     columns {
@@ -61,6 +63,7 @@ resource "aws_glue_catalog_table" "earthquakes" {
     }
   }
 
+  # dt lives in the s3 path (dt=YYYY-MM-DD), not inside the parquet files themselves
   partition_keys {
     name = "dt"
     type = "string"

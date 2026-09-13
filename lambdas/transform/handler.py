@@ -4,9 +4,16 @@ import boto3
 import pandas as pd
 import os
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+    
 S3 = boto3.client("s3")
 BUCKET = os.environ["DATA_BUCKET"]
 
+# flattens raw feed json into rows, drops bad/duplicate ones
 def to_dataframe(raw_bytes):
     data = json.loads(raw_bytes)
     
@@ -36,6 +43,8 @@ def to_dataframe(raw_bytes):
     
     return df
 
+# triggered by s3 whenever a new file lands in bronze/ - reads it, cleans it,
+# writes parquet to gold/ partitioned by day
 def handler(event,context):
     record = event["Records"][0]["s3"]
     key = record["object"]["key"]

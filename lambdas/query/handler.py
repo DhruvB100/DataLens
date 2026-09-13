@@ -4,6 +4,13 @@ import boto3
 
 import json
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+    
+
 ATHENA = boto3.client("athena")
 DATABASE = os.environ["GLUE_DB"]
 OUT_PATH = os.environ["ATHENA_OUTPUT"]
@@ -11,6 +18,7 @@ OUT_PATH = os.environ["ATHENA_OUTPUT"]
 CACHE = {}
 CACHE_TTL = 30
 
+# runs a query against athena and polls until it's actually done
 def run_query(sql_query):
     resp = ATHENA.start_query_execution(
         QueryString = sql_query,
@@ -41,6 +49,8 @@ def run_query(sql_query):
     return result["ResultSet"]["Rows"]
 
 
+# athena returns everything as {"Data": [{"VarCharValue": ...}]} - this turns
+# that into normal list-of-dict json, first row is the header not data
 def rows_to_dict(rows):
     header_row = rows[0]["Data"]
     header = [col.get("VarCharValue") for col in header_row]
@@ -54,10 +64,12 @@ def rows_to_dict(rows):
         records.append(records_dict)
     return records
     
+# routes /stats, /recent, /largest to the right sql, cached for a bit so we're
+# not hitting athena on every single request
 def handler(event,context):
     path = event.get("path","")
     params = event.get("queryStringParameters") or {}
-    
+
     cache_key = f"{path}-{str(sorted(params.items()))}"
     
     if cache_key in CACHE:

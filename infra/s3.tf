@@ -1,6 +1,8 @@
+# the data lake bucket - bronze/silver/gold layout
 resource "aws_s3_bucket" "data_lake" {
   bucket = var.bucket_name
 }
+# these are just empty placeholder objects so the "folders" show up in the console
 resource "aws_s3_object" "bronze" {
   bucket = aws_s3_bucket.data_lake.id
   key = "bronze/"
@@ -14,6 +16,9 @@ resource "aws_s3_object" "gold" {
   key = "gold/"
 }
 
+# fires the transform lambda whenever a new file lands in bronze/
+# depends_on is required here - otherwise s3 can try to wire this up before
+# the lambda has permission to be invoked, and apply fails
 resource "aws_s3_bucket_notification" "bronze_trigger" {
   bucket = aws_s3_bucket.data_lake.id
   lambda_function {

@@ -5,10 +5,18 @@ import urllib.request
 
 import boto3
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+    
+
 S3 = boto3.client("s3")
 BUCKET = os.environ["DATA_BUCKET"]
 FEED_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson"
 
+# grabs the raw usgs feed and dumps it straight into bronze/, no cleaning yet
 def handler(event, context):
     with urllib.request.urlopen(FEED_URL, timeout=20) as r:
         raw = r.read()
