@@ -34,7 +34,7 @@ RULES = """1. Generate exactly one read-only SQL SELECT statement for aws ATHENA
 
 # raw http call to gemini - no sdk, just urllib, so nothing extra to package
 def call_llm(prompt):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key={GEMINI_API_KEY}"
     body = {
         "contents": [
             {
@@ -155,11 +155,49 @@ def handler(event,context):
             },
             "body": json.dumps({"error":str(e)})
         }
+    except Exception as e:
+        # anything else from generate_sql - rate limits, gemini being down, etc.
+        # not the model's fault, so don't blame the question
+        print(f"ERROR: {str(e)}")
+        return {
+            "statusCode":502,
+            "headers":{
+                "Content-Type":"application/json",
+                "Access-Control-Allow-Origin":"*"
+            },
+            "body": json.dumps({
+                "error": "The AI service is temporarily unavailable. Please try again in a moment."})
+        }
+    print(f"Generated SQL: {sql}")  # so we can see what it generated in cloudwatch later
 
-    rows = run_query(sql)
+    try:
+        rows = run_query(sql)
+    except RuntimeError as e:
+        # generated sql that's valid-looking but athena rejects (bad syntax etc)
+        print(f"ERROR:{str(e)}\nSQL: {sql}")
+        return {
+            "statusCode":502,
+            "headers":{
+                    "Content-Type":"application/json",
+                    "Access-Control-Allow-Origin":"*"
+                 },
+            "body":json.dumps({
+                "error": "We couldn't run that query against the data. Try rephrasing your question",
+                "attempted sql":sql
+            })
+        }
     records = rows_to_dict(rows)
-    
-    answer = summarize_results(question,records)
+
+    if not records:
+        # skip the extra llm call if there's nothing to summarize
+        answer = "No matching data was found for this question"
+    else:
+        try:
+            answer = summarize_results(question,records)
+        except Exception as e:
+            # got real rows back, just couldn't summarize them - still return the data
+            print(f"Error: {str(e)}")
+            answer = f"Found {len(records)} matching result(s), but couldn't generate a summary"
     
     return {
         "statusCode":200,
@@ -192,4 +230,3 @@ if __name__ == "__main__":
         
         gen_sql = handler(sample_event,None)
         print(f"Generate SQL: {gen_sql}")
-            

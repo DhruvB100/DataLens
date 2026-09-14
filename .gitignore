@@ -9,3 +9,4 @@ records.json
 issues.txt
 commands.txt
 terraform.tfvars
+/scripts
