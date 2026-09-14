@@ -30,6 +30,7 @@ RULES = """1. Generate exactly one read-only SQL SELECT statement for aws ATHENA
            4. Use only columns listed in the schema. Do not invent new ones.
            5. Output must not have semicolons and don't chain multiple statements together.
            6. Output must not have any comments or explanatory texts. ONLY SQL, nothing else.
+           7. Always include a LIMIT clause(max is 100 records) unless the query is pure aggregate that returns no raw rows (COUNT,AVG,SUM,etc)
         """
 
 # raw http call to gemini - no sdk, just urllib, so nothing extra to package

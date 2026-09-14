@@ -1,0 +1,1 @@
+export const API_BASE = "https://66z1yldj84.execute-api.us-east-1.amazonaws.com/prod"
