@@ -1,5 +1,7 @@
 import './App.css'
 import Dashboard from './Dashboard'
+import Ask from './Ask'
+
 function App() {
 
   return (
@@ -11,6 +13,7 @@ function App() {
       </section>
       <section>
         <h2>Ask</h2>
+        <Ask />
       </section>
 
     </>

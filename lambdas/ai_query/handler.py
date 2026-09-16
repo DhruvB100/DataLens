@@ -30,8 +30,11 @@ RULES = """1. Generate exactly one read-only SQL SELECT statement for aws ATHENA
            4. Use only columns listed in the schema. Do not invent new ones.
            5. Output must not have semicolons and don't chain multiple statements together.
            6. Output must not have any comments or explanatory texts. ONLY SQL, nothing else.
-           7. Always include a LIMIT clause(max is 100 records) unless the query is pure aggregate that returns no raw rows (COUNT,AVG,SUM,etc)
+           7. Always include a LIMIT clause(max is 100 records) unless the query is pure aggregate that returns no raw rows (COUNT,AVG,SUM,etc).
+           8. The earthquakes table may contain duplicate rows for the same real event (same id, ingested more than once). Always use SELECT DISTINCT for row-listing queries, and COUNT(DISTINCT id) instead of COUNT(*) for counts, so results reflect unique events.
         """
+# rules 7 and 8 got added after real testing - 7 because "show me everything"
+# ran an unbounded table scan, 8 because the ai's count didn't match the dashboard's
 
 # raw http call to gemini - no sdk, just urllib, so nothing extra to package
 def call_llm(prompt):

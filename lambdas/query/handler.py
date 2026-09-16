@@ -79,16 +79,18 @@ def handler(event,context):
             # CACHE HIT!
             return saved_response
     
+    # DISTINCT everywhere here because the same real earthquake can get ingested
+    # more than once (separate 6-hour snapshots) - see issues.txt
     if path == "/stats":
-        sql_query = "SELECT dt,count(*) as num_events, avg(magnitude) as avg_magnitude FROM earthquakes GROUP BY dt ORDER BY dt DESC"
-    
+        sql_query = "SELECT dt, COUNT(DISTINCT id) as num_events, AVG(magnitude) as avg_magnitude FROM earthquakes GROUP BY dt ORDER BY dt DESC"
+
     elif path == "/recent":
         limit = params.get("limit","50")
-        sql_query = f"SELECT * FROM earthquakes ORDER BY event_time DESC LIMIT {int(limit)}"
-    
+        sql_query = f"SELECT DISTINCT * FROM earthquakes ORDER BY event_time DESC LIMIT {int(limit)}"
+
     elif path == "/largest":
         limit = params.get("limit","10")
-        sql_query = f"SELECT * FROM earthquakes ORDER BY magnitude DESC LIMIT {int(limit)}"
+        sql_query = f"SELECT DISTINCT * FROM earthquakes ORDER BY magnitude DESC LIMIT {int(limit)}"
         
     else:
         return {

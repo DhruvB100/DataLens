@@ -123,7 +123,8 @@ resource "aws_api_gateway_deployment" "deployment" {
         aws_api_gateway_integration.stats_integration,
         aws_api_gateway_integration.largest_integration,
         aws_api_gateway_integration.recent_integration,
-        aws_api_gateway_integration.ask_integration
+        aws_api_gateway_integration.ask_integration,
+        aws_api_gateway_integration.ask_options_integration
    ]
    triggers = {
     "redeployment" = sha1(jsonencode([
@@ -141,7 +142,9 @@ resource "aws_api_gateway_deployment" "deployment" {
 
         aws_api_gateway_resource.ask_resource.id,
         aws_api_gateway_method.ask_post.id,
-        aws_api_gateway_integration.ask_integration.id
+        aws_api_gateway_integration.ask_integration.id,
+
+        aws_api_gateway_integration.ask_options_integration.id,
     ]))
    }
    lifecycle {
@@ -153,4 +156,51 @@ resource "aws_api_gateway_stage" "prod" {
     rest_api_id = aws_api_gateway_rest_api.api.id
     stage_name = "prod"
     deployment_id = aws_api_gateway_deployment.deployment.id
+}
+
+# browsers send a preflight OPTIONS request before any POST with a json body -
+# this whole block just answers that preflight check with the right cors headers,
+# no lambda involved (that's why it's a MOCK integration, not AWS_PROXY)
+resource "aws_api_gateway_method" "ask_options" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.ask_resource.id
+    http_method = "OPTIONS"
+    authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "ask_options_integration" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.ask_resource.id
+    http_method = "OPTIONS"
+    type = "MOCK"
+    request_templates = {"application/json":"{\"statusCode\": 200}"}
+    depends_on = [aws_api_gateway_method.ask_options]
+}
+
+resource "aws_api_gateway_method_response" "ask_options_200" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.ask_resource.id
+    http_method = "OPTIONS"
+    status_code = "200"
+    response_parameters = {
+        "method.response.header.Access-Control-Allow-Headers" = true, 
+        "method.response.header.Access-Control-Allow-Methods" = true,
+        "method.response.header.Access-Control-Allow-Origin" = true
+    }
+
+    depends_on = [aws_api_gateway_method.ask_options]
+}
+
+resource "aws_api_gateway_integration_response" "ask_options_integration_response" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.ask_resource.id
+    http_method = "OPTIONS"
+    status_code = "200"
+    response_parameters = {
+        "method.response.header.Access-Control-Allow-Headers":"'Content-Type'",
+        "method.response.header.Access-Control-Allow-Methods":"'OPTIONS,POST'"
+        "method.response.header.Access-Control-Allow-Origin":"'*'"
+
+    }
+    depends_on = [aws_api_gateway_integration.ask_options_integration]
 }

@@ -2,6 +2,7 @@ import { useState, useEffect} from "react";
 import { API_BASE } from "./api";
 import { BarChart, Bar, XAxis,YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
+// bar chart + table, fetches its own data on mount, no props needed
 export default function Dashboard() {
     const [stats,setStats] = useState([])
 
@@ -9,6 +10,7 @@ export default function Dashboard() {
         fetch(`${API_BASE}/stats`)
             .then(res => res.json())
             .then(data => {
+                // api returns numbers as strings (athena thing) - convert or the chart breaks
                 const cleaned_data = data.map(row => {
                     return {
                         ...row,
@@ -19,7 +21,24 @@ export default function Dashboard() {
 
                 setStats(cleaned_data);
             });
-    }, []); 
+    }, []);
+
+    const [largest,setLargest] = useState([])
+
+    useEffect(() => {
+        fetch(`${API_BASE}/largest?limit=10`)
+            .then(res => res.json())
+            .then(data => {
+                const cleaned_data = data.map(row => {
+                    return {
+                        ...row,
+                        magnitude: Number(row.magnitude),
+                        depth_km: Number(row.depth_km)
+                    };
+                });
+            setLargest(cleaned_data);
+            });
+    }, []);
 
     return (
         <div style={{padding: "20px"}}>
@@ -35,6 +54,30 @@ export default function Dashboard() {
         
                 </BarChart>
             </ResponsiveContainer>
+
+            <h3>Largest Recent Earthquakes</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Place</th>
+                        <th>Magnitude</th>
+                        <th>Depth (km)</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {largest.map(row => {
+                        return (
+                            <tr key ={row.id}>
+                                <td>{row.place}</td>
+                                <td>{row.magnitude.toFixed(1)}</td>
+                                <td>{row.depth_km.toFixed(1)}</td>
+                                <td>{row.event_time}</td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
         </div>
     );
 }
