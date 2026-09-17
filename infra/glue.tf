@@ -6,16 +6,16 @@ resource "aws_glue_catalog_database" "datalens_db" {
 # tells athena how to read the parquet files sitting in gold/
 resource "aws_glue_catalog_table" "earthquakes" {
   database_name = aws_glue_catalog_database.datalens_db.name
-  name = "earthquakes"
-  table_type = "EXTERNAL_TABLE"
+  name          = "earthquakes"
+  table_type    = "EXTERNAL_TABLE"
 
   parameters = {
     "classification" = "parquet"
   }
 
   storage_descriptor {
-    location = "s3://${aws_s3_bucket.data_lake.id}/gold/"
-    input_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+    location      = "s3://${aws_s3_bucket.data_lake.id}/gold/"
+    input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
     output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
 
     ser_de_info {

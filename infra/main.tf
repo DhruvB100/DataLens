@@ -1,16 +1,16 @@
 # provider setup - aws for real resources, archive for zipping lambda code
 terraform {
-    required_providers {
-        aws = {
-            source = "hashicorp/aws"
-            version = "~> 5.0"
-        }
-        archive = {
-            source = "hashicorp/archive"
-            version = "~> 2.0"
-        }
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.0"
+    }
+  }
 }
 provider "aws" {
-    region = "us-east-1"
+  region = "us-east-1"
 }
