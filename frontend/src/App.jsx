@@ -1,6 +1,7 @@
 import './App.css'
 import Dashboard from './Dashboard'
 import Ask from './Ask'
+import About from './About'
 
 function App() {
 
@@ -14,6 +15,10 @@ function App() {
       <section>
         <h2>Ask</h2>
         <Ask />
+      </section>
+      <section>
+        <h2>About this project</h2>
+        <About />
       </section>
 
     </>

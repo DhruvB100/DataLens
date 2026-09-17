@@ -47,7 +47,7 @@ export default function Ask(){
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="Ask a question about the data..."
-            style={{ width: "300px" }}
+            style={{ width: "100%", maxWidth:"300px", boxSizing:"border-box" }}
         />
         <button type="button" onClick={handleAsk} disabled={loading}>
             {loading ? "Asking..." : "Ask"}
@@ -67,24 +67,26 @@ export default function Ask(){
                 {/* columns aren't fixed like the Dashboard table - they depend on
                     whatever sql the ai wrote, so headers are built from the data itself */}
                 {result.rows.length > 0 && (
-                    <table>
-                        <thead>
-                            <tr>
-                                {Object.keys(result.rows[0]).map((col) => (
-                                    <th key={col}>{col}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {result.rows.map((row, i) => (
-                                <tr key={i}>
-                                    {Object.values(row).map((val, j) => (
-                                        <td key={j}>{val}</td>
+                    <div style={{overflowX:"auto"}}>
+                        <table>
+                            <thead>
+                                <tr>
+                                    {Object.keys(result.rows[0]).map((col) => (
+                                        <th key={col}>{col}</th>
                                     ))}
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {result.rows.map((row, i) => (
+                                    <tr key={i}>
+                                        {Object.values(row).map((val, j) => (
+                                            <td key={j}>{val}</td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
         )}

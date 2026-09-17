@@ -1,5 +1,11 @@
 # DataLens
 
+## Live Demo
+
+[https://d2h2so545k2ja6.cloudfront.net](https://d2h2so545k2ja6.cloudfront.net)
+
+A dashboard of recent earthquake data plus a natural-language "ask a question about the data" box, both backed by the API documented below.
+
 ## API
 
 This is a small public API that lets you ask questions about earthquake data. It's backed by AWS Athena under the hood. Just hit one of the URLs below with a browser or curl and you'll get JSON back.
