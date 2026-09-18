@@ -9,8 +9,16 @@ resource "aws_glue_catalog_table" "earthquakes" {
   name          = "earthquakes"
   table_type    = "EXTERNAL_TABLE"
 
+  # projection.* below means athena computes valid dt partitions itself from a
+  # date range instead of relying on the glue catalog's stored partition list -
+  # without this, new days never show up until someone manually runs
   parameters = {
-    "classification" = "parquet"
+    "classification"            = "parquet"
+    "projection.enabled"        = "true"
+    "projection.dt.type"        = "date"
+    "projection.dt.range"       = "2026-09-01,NOW"
+    "projection.dt.format"      = "yyyy-MM-dd"
+    "storage.location.template" = "s3://${aws_s3_bucket.data_lake.id}/gold/dt=$${dt}/"
   }
 
   storage_descriptor {

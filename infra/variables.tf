@@ -12,7 +12,7 @@ variable "gemini_api_key" {
 }
 
 variable "alert_email" {
-  type = string
+  type        = string
   description = "email alert"
-  sensitive = true
+  sensitive   = true
 }
