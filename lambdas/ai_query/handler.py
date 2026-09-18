@@ -31,10 +31,12 @@ RULES = """1. Generate exactly one read-only SQL SELECT statement for aws ATHENA
            5. Output must not have semicolons and don't chain multiple statements together.
            6. Output must not have any comments or explanatory texts. ONLY SQL, nothing else.
            7. Always include a LIMIT clause(max is 100 records) unless the query is pure aggregate that returns no raw rows (COUNT,AVG,SUM,etc).
-           8. The earthquakes table may contain duplicate rows for the same real event (same id, ingested more than once). Always use SELECT DISTINCT for row-listing queries, and COUNT(DISTINCT id) instead of COUNT(*) for counts, so results reflect unique events.
+           8. The earthquakes table may contain duplicate/revised rows for the same real event (same id, ingested more than once, sometimes with a slightly different place/magnitude/depth on a later revision). Use COUNT(DISTINCT id) instead of COUNT(*) for counts. For any query that returns individual rows (listing, filtering, finding a specific record like the largest/smallest/most recent), first reduce the table to one row per event using this exact pattern before applying your own WHERE/ORDER BY/LIMIT on top of it: SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY event_time DESC) AS rn FROM earthquakes) WHERE rn = 1. This keeps only the most recently revised copy of each event.
         """
 # rules 7 and 8 got added after real testing - 7 because "show me everything"
-# ran an unbounded table scan, 8 because the ai's count didn't match the dashboard's
+# ran an unbounded table scan, 8 because the ai's count and later its "largest"
+# answer didn't match the dashboard's (which dedupes by id, keeping the latest
+# revision)
 
 # raw http call to gemini - no sdk, just urllib, so nothing extra to package
 def call_llm(prompt):

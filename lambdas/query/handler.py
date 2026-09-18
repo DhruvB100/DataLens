@@ -79,18 +79,32 @@ def handler(event,context):
             # CACHE HIT!
             return saved_response
     
-    # DISTINCT everywhere here because the same real earthquake can get ingested
-    # more than once (separate 6-hour snapshots) - see issues.txt
+    # dedupe by id everywhere here, not by matching every column because the same real
+    # earthquake can get ingested more than once (separate 6-hour snapshots) and
+    # come back with a slightly revised place/magnitude, or even land in a
+    # different dt partition than its earlier copy
     if path == "/stats":
         sql_query = "SELECT dt, COUNT(DISTINCT id) as num_events, AVG(magnitude) as avg_magnitude FROM earthquakes GROUP BY dt ORDER BY dt DESC"
 
     elif path == "/recent":
         limit = params.get("limit","50")
-        sql_query = f"SELECT DISTINCT * FROM earthquakes ORDER BY event_time DESC LIMIT {int(limit)}"
+        sql_query = f"""SELECT id, magnitude, place, event_time, tsunami, longitude, latitude, depth_km, dt
+            FROM (
+                SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY event_time DESC) AS rn
+                FROM earthquakes
+            ) WHERE rn = 1
+            ORDER BY event_time DESC
+            LIMIT {int(limit)}"""
 
     elif path == "/largest":
         limit = params.get("limit","10")
-        sql_query = f"SELECT DISTINCT * FROM earthquakes ORDER BY magnitude DESC LIMIT {int(limit)}"
+        sql_query = f"""SELECT id, magnitude, place, event_time, tsunami, longitude, latitude, depth_km, dt
+            FROM (
+                SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY event_time DESC) AS rn
+                FROM earthquakes
+            ) WHERE rn = 1
+            ORDER BY magnitude DESC
+            LIMIT {int(limit)}"""
         
     else:
         return {
