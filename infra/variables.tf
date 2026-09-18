@@ -10,3 +10,9 @@ variable "gemini_api_key" {
   description = "Gemini LLM API key"
   sensitive   = true
 }
+
+variable "alert_email" {
+  type = string
+  description = "email alert"
+  sensitive = true
+}
